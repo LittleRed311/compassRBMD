@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+  <title>Head Compass</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    /* Meta wearables best practices: Pure black background, 600x600 viewport, high contrast */
+    body {
+      width: 600px;
+      height: 600px;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Inter', -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: #00d4ff; /* Bright accent color */
+    }
+
+    .compass-container {
+      position: relative;
+      width: 360px;
+      height: 360px;
+      margin-top: 20px;
+      border-radius: 50%;
+      border: 4px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, #111 0%, #000 70%);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+    }
+
+    /* North, East, South, West labels */
+    .label {
+      position: absolute;
+      font-size: 28px;
+      font-weight: bold;
+      color: #888;
+    }
+    .label.n { top: 20px; color: #00d4ff; }
+    .label.e { right: 20px; }
+    .label.s { bottom: 20px; }
+    .label.w { left: 20px; }
+
+    /* The rotating pointer */
+    .pointer {
+      position: absolute;
+      width: 12px;
+      height: 180px;
+      background: linear-gradient(to top, transparent 50%, #00d4ff 50%);
+      transform-origin: center center;
+      transition: transform 0.1s linear;
+      border-radius: 6px;
+      z-index: 10;
+    }
+    
+    .center-dot {
+      width: 24px;
+      height: 24px;
+      background-color: #fff;
+      border-radius: 50%;
+      z-index: 20;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    /* Fullscreen start overlay to request permissions */
+    #start-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 600px;
+      height: 600px;
+      background-color: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    /* Wearable D-pad focusable element */
+    .focusable {
+      transition: all 150ms ease;
+      border: 2px solid transparent;
+      min-height: 88px;
+      background-color: #222;
+      color: #fff;
+      font-size: 24px;
+      padding: 0 40px;
+      border-radius: 44px;
+      cursor: pointer;
+      margin-top: 40px;
+    }
+
+    .focusable:focus, .focusable:hover {
+      outline: none;
+      border-color: #00d4ff;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+      background-color: #333;
+    }
+
+    #heading-text {
+      font-size: 56px;
+      font-weight: bold;
+      margin-top: 30px;
+      min-height: 70px;
+      text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="start-screen">
+    <h1>Head Compass</h1>
+    <p style="font-size: 20px; max-width: 440px; line-height: 1.5; color: #aaa;">
+      Point the way with your head. Press Enter or tap to begin.
+    </p>
+    <button id="start-btn" class="focusable">Start</button>
+  </div>
+
+  <div id="app-screen" class="hidden">
+    <div class="compass-container">
+      <div class="label n">N</div>
+      <div class="label e">E</div>
+      <div class="label s">S</div>
+      <div class="label w">W</div>
+      <div id="pointer" class="pointer"></div>
+      <div class="center-dot"></div>
+    </div>
+    <div id="heading-text">0°</div>
+  </div>
+
+  <script>
+    // D-pad Navigation Map
+    const DPAD = {
+      UP: 'ArrowUp',
+      DOWN: 'ArrowDown',
+      LEFT: 'ArrowLeft',
+      RIGHT: 'ArrowRight',
+      SELECT: 'Enter',
+      BACK: 'Escape',
+    };
+
+    function initDPad() {
+      document.addEventListener('keydown', function(e) {
+        if (e.key === DPAD.SELECT) {
+          if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+            document.activeElement.click();
+          }
+        } else if (e.key === DPAD.BACK) {
+          history.back();
+        }
+      });
+      // Automatically focus start button
+      const startBtn = document.getElementById('start-btn');
+      if (startBtn) startBtn.focus();
+    }
+
+    const startBtn = document.getElementById('start-btn');
+    const startScreen = document.getElementById('start-screen');
+    const appScreen = document.getElementById('app-screen');
+    const pointer = document.getElementById('pointer');
+    const headingText = document.getElementById('heading-text');
+
+    // Handle orientation updates
+    function handleOrientation(e) {
+      if (e.alpha === null) return;
+      
+      const heading = e.alpha; // 0 to 360 degrees
+      headingText.textContent = heading.toFixed(1) + '°';
+      
+      // Rotate pointer opposite to heading to always point North
+      pointer.style.transform = `rotate(${-heading}deg)`;
+    }
+
+    function startIMU() {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+      startScreen.classList.add('hidden');
+      appScreen.classList.remove('hidden');
+    }
+
+    startBtn.addEventListener('click', function() {
+      // Check if permission is needed (e.g. iOS)
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(function(state) {
+            if (state === 'granted') {
+              startIMU();
+            } else {
+              alert("Permission to access device orientation was denied.");
+            }
+          })
+          .catch(console.error);
+      } else {
+        // Glasses runtime or standard Android automatically grants
+        startIMU();
+      }
+    });
+
+    initDPad();
+  </script>
+</body>
+</html>
