@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+  <title>Head Compass</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    /* Meta wearables best practices: Pure black background, 600x600 viewport, high contrast */
+    body {
+      width: 600px;
+      height: 600px;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Inter', -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: #00d4ff; /* Bright accent color */
+    }
+
+    .compass-container {
+      position: relative;
+      width: 360px;
+      height: 360px;
+      margin-top: 20px;
+      border-radius: 50%;
+      border: 4px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, #111 0%, #000 70%);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+    }
+
+    /* North, East, South, West labels */
+    .label {
+      position: absolute;
+      font-size: 28px;
+      font-weight: bold;
+      color: #888;
+    }
+    .label.n { top: 20px; color: #00d4ff; }
+    .label.e { right: 20px; }
+    .label.s { bottom: 20px; }
+    .label.w { left: 20px; }
+
+    /* The rotating pointer */
+    .pointer {
+      position: absolute;
+      width: 12px;
+      height: 180px;
+      background: linear-gradient(to top, transparent 50%, #00d4ff 50%);
+      transform-origin: center center;
+      transition: transform 0.1s linear;
+      border-radius: 6px;
+      z-index: 10;
+    }
+    
+    .center-dot {
+      width: 24px;
+      height: 24px;
+      background-color: #fff;
+      border-radius: 50%;
+      z-index: 20;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    #heading-text {
+      font-size: 56px;
+      font-weight: bold;
+      margin-top: 30px;
+      min-height: 70px;
+      text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-screen">
+    <div class="compass-container">
+      <div class="label n">N</div>
+      <div class="label e">E</div>
+      <div class="label s">S</div>
+      <div class="label w">W</div>
+      <div id="pointer" class="pointer"></div>
+      <div class="center-dot"></div>
+    </div>
+    <div id="heading-text">0°</div>
+  </div>
+
+  <script>
+    // D-pad Navigation Map
+    const DPAD = {
+      UP: 'ArrowUp',
+      DOWN: 'ArrowDown',
+      LEFT: 'ArrowLeft',
+      RIGHT: 'ArrowRight',
+      SELECT: 'Enter',
+      BACK: 'Escape',
+    };
+
+    function initDPad() {
+      document.addEventListener('keydown', function(e) {
+        if (e.key === DPAD.SELECT) {
+          if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+            document.activeElement.click();
+          }
+        } else if (e.key === DPAD.BACK) {
+          history.back();
+        }
+      });
+    }
+
+    const pointer = document.getElementById('pointer');
+    const headingText = document.getElementById('heading-text');
+
+    // Handle orientation updates
+    function handleOrientation(e) {
+      if (e.alpha === null) return;
+      
+      const heading = e.alpha; // 0 to 360 degrees
+      headingText.textContent = heading.toFixed(1) + '°';
+      
+      // Rotate pointer opposite to heading to always point North
+      pointer.style.transform = `rotate(${-heading}deg)`;
+    }
+
+    function startIMU() {
+      // The glasses runtime automatically grants permission.
+      // If testing on iOS Safari, this auto-start may fail without a user gesture.
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(function(state) {
+            if (state === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+          })
+          .catch(console.error);
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
+    }
+
+    // Auto-launch the compass
+    startIMU();
+
+    initDPad();
+  </script>
+</body>
+</html>

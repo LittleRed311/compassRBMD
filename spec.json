@@ -1,0 +1,9 @@
+{
+  "size": 128,
+  "background": {"type": "solid", "color": "#000000"},
+  "layers": [
+    {"type": "ring", "cx": 64, "cy": 64, "r": 58, "width": 4, "color": "#ffffff"},
+    {"type": "polygon", "cx": 64, "cy": 64, "r": 45, "sides": 4, "rotation": -90, "color": "#00d4ff"},
+    {"type": "glyph", "char": "N", "cx": 64, "cy": 30, "scale": 3, "color": "#ffffff"}
+  ]
+}

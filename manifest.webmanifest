@@ -1,0 +1,10 @@
+{
+  "name": "Head Compass",
+  "short_name": "Compass",
+  "icons": [
+    { "src": "favicon.png", "sizes": "128x128", "type": "image/png" }
+  ],
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "display": "standalone"
+}
