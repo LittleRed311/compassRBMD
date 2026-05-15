@@ -75,43 +75,6 @@
       z-index: 20;
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
     }
-
-    /* Fullscreen start overlay to request permissions */
-    #start-screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 600px;
-      height: 600px;
-      background-color: #000000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-
-    /* Wearable D-pad focusable element */
-    .focusable {
-      transition: all 150ms ease;
-      border: 2px solid transparent;
-      min-height: 88px;
-      background-color: #222;
-      color: #fff;
-      font-size: 24px;
-      padding: 0 40px;
-      border-radius: 44px;
-      cursor: pointer;
-      margin-top: 40px;
-    }
-
-    .focusable:focus, .focusable:hover {
-      outline: none;
-      border-color: #00d4ff;
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-      background-color: #333;
-    }
-
     #heading-text {
       font-size: 56px;
       font-weight: bold;
@@ -119,23 +82,11 @@
       min-height: 70px;
       text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
     }
-
-    .hidden {
-      display: none !important;
-    }
   </style>
 </head>
 <body>
 
-  <div id="start-screen">
-    <h1>Head Compass</h1>
-    <p style="font-size: 20px; max-width: 440px; line-height: 1.5; color: #aaa;">
-      Point the way with your head. Press Enter or tap to begin.
-    </p>
-    <button id="start-btn" class="focusable">Start</button>
-  </div>
-
-  <div id="app-screen" class="hidden">
+  <div id="app-screen">
     <div class="compass-container">
       <div class="label n">N</div>
       <div class="label e">E</div>
@@ -168,14 +119,8 @@
           history.back();
         }
       });
-      // Automatically focus start button
-      const startBtn = document.getElementById('start-btn');
-      if (startBtn) startBtn.focus();
     }
 
-    const startBtn = document.getElementById('start-btn');
-    const startScreen = document.getElementById('start-screen');
-    const appScreen = document.getElementById('app-screen');
     const pointer = document.getElementById('pointer');
     const headingText = document.getElementById('heading-text');
 
@@ -191,28 +136,23 @@
     }
 
     function startIMU() {
-      window.addEventListener('deviceorientation', handleOrientation, true);
-      startScreen.classList.add('hidden');
-      appScreen.classList.remove('hidden');
-    }
-
-    startBtn.addEventListener('click', function() {
-      // Check if permission is needed (e.g. iOS)
+      // The glasses runtime automatically grants permission.
+      // If testing on iOS Safari, this auto-start may fail without a user gesture.
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
           .then(function(state) {
             if (state === 'granted') {
-              startIMU();
-            } else {
-              alert("Permission to access device orientation was denied.");
+              window.addEventListener('deviceorientation', handleOrientation, true);
             }
           })
           .catch(console.error);
       } else {
-        // Glasses runtime or standard Android automatically grants
-        startIMU();
+        window.addEventListener('deviceorientation', handleOrientation, true);
       }
-    });
+    }
+
+    // Auto-launch the compass
+    startIMU();
 
     initDPad();
   </script>
